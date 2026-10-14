@@ -39,3 +39,6 @@ When installed correctly, sys-botbase will make your docked joy-con's home butto
 - Big thank you to [jakibaki](https://github.com/jakibaki/sys-netcheat) for a great sysmodule base to learn and work with, as well as being helpful on the Reswitched discord!
 - Thanks to RTNX on discord for bringing to my attention a nasty little bug that would very randomly cause RAM poking to go bad and the switch (sometimes) crashing as a result.
 - Thanks to Anubis for stress testing!
+
+## Other
+Modifications were done by Claude to make it more useful for use with it.
