@@ -16,6 +16,15 @@ A Nintendo Switch (CFW) sys-module that allows users to remote control their swi
 ### Screen Capture:
 - Capture current screen and return as JPG
 
+## This fork
+Based on [quinnfrost/sys-botbase](https://github.com/quinnfrost/sys-botbase) (olliz0r's sys-botbase with the HOS 22 fix). Additions:
+- SD card file commands: `fileList`, `fileSize`, `fileRead`, `fileWrite`, `fileAppend`, `fileDelete`, `fileMkdir`, `fileRename`
+  (binary-safe transfers over the same socket), so files can be installed and logs read without FTP / MTP.
+- `killGame`: closes the running application, so a game can be restarted remotely.
+- Socket service: one BSD session, automatic service type (fewer system resources).
+
+Version string (`getVersion`): `2.6-files-kill`. See [commands.md](commands.md) for every command.
+
 ## Disclaimer:
 This project was created for the purpose of development for bot automation. The creators and maintainers of this project are not liable for any damages caused or bans received. Use at your own risk.
 

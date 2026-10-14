@@ -97,8 +97,31 @@ See https://switchbrew.github.io/libnx/hid_8h.html HidKeyboardKey and HidKeyboar
 |getMainNsoBase|Returns Memory address of the NSOMain|none|getMainNsoBase|
 |isProgramRunning|Checks if program with given id is running|1. programID to check| isProgramRunning 0x420000000007e51a|
 |game|Returns Metadata about the running game|1. one of the following<br>**icon** IconData<br>**version** Game Version<br>**rating** age rating<br>**author** Author of the game<br>**name** Name of the game|game rating|
-|getVersion|Returns version of sys-botbased used|none|getVersion|
+|getVersion|Returns version of sys-botbase used (this fork: `2.6-files-kill`)|none|getVersion|
 |charge|Returns charge status of the battery|none|charge|
+
+## SD card files (this fork)
+Paths are absolute SD paths, either `/path` or `sdmc:/path`, without spaces. The SD card is mounted on the first file command.
+Replies are sent directly on the socket of the command (not through the usual reply buffer), so binary data comes back unchanged.
+|Command|Description|Parameters|Usage|
+|--|--|--|--|
+|fileList|Lists a directory|1. directory path<br>Return: one line per entry, `D <name>` for a directory or `F <size> <name>` for a file, then an empty line|fileList /atmosphere/contents|
+|fileSize|Returns the size of a file|1. file path<br>Return: size in bytes, or `-1`|fileSize /atmosphere/config/system_settings.ini|
+|fileRead|Reads a file, or part of it|1. file path<br>2. (optional) offset<br>3. (optional) length, 0 or omitted = to the end of the file<br>Return: `<n>` on its own line, then exactly n raw bytes; `-1` on error|fileRead /log.txt<br>fileRead /log.txt 0x100 64|
+|fileWrite|Creates or overwrites a file|1. file path<br>2. size in bytes<br>After the command line, send exactly that many raw bytes. The bytes are always read off the socket, even when the file can't be opened, so the connection stays in sync<br>Return: `ok <written>` or `err <written>`|fileWrite /test.bin 1024|
+|fileAppend|Like fileWrite, but appends to the file|1. file path<br>2. size in bytes, then the raw bytes<br>Return: `ok <written>` or `err <written>`|fileAppend /log.txt 12|
+|fileDelete|Deletes a file (or an empty directory)|1. path<br>Return: `ok` or `err`|fileDelete /test.bin|
+|fileMkdir|Creates a directory|1. path<br>Return: `ok` or `err`|fileMkdir /dump|
+|fileRename|Renames or moves a file / directory|1. old path<br>2. new path<br>Return: `ok` or `err`|fileRename /a.txt /b.txt|
+
+Errors common to all file commands: `err sd` (SD card couldn't be mounted), `err args` (wrong number of parameters), `err unknown` (unknown file command).
+
+Example (Python): `s.sendall(b"fileWrite /test.bin %d\r\n" % len(data) + data)`, then read one line.
+
+## Application control (this fork)
+|Command|Description|Parameters|Usage|
+|--|--|--|--|
+|killGame|Terminates the running application (pmshell). The system then shows "The software was closed because an error occurred"; press A to get back to the HOME menu|none<br>Return: `ok`, `err none` (no application running) or `err <result code in hex>`|killGame|
 
 ## Configure
 The configure command allows setting of some timing values in sys-botbase:

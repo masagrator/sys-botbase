@@ -12,12 +12,13 @@
 #include "args.h"
 #include "util.h"
 #include "freeze.h"
+#include "files.h"
 #include <poll.h>
 
 #define TITLE_ID 0x430000000000000B
-#define HEAP_SIZE 0x00480000
+#define HEAP_SIZE 0x00200000 // small BSS: a large inner heap starves system Pool 2 at boot on HOS 22.x (hid/am 0x10801 panics)
 #define THREAD_SIZE 0x1A000
-#define VERSION_S "2.5"
+#define VERSION_S "2.6-files-kill"
 
 typedef enum {
     Active = 0,
@@ -68,6 +69,21 @@ void __libnx_initheap(void)
     fake_heap_end = inner_heap + sizeof(inner_heap);
 }
 
+// Default bsd max sizes make tmemCreate allocate a 2.11MB transfer buffer (0x40000*2
+// + udp) * sb_efficiency 4, which exceeds the reduced inner heap. Base-size windows
+// still dwarf the 22KB protocol lines.
+static const SocketInitConfig botbaseSocketConfig = {
+    .tcp_tx_buf_size        = 0x8000,
+    .tcp_rx_buf_size        = 0x10000,
+    .tcp_tx_buf_max_size    = 0x8000,
+    .tcp_rx_buf_max_size    = 0x10000,
+    .udp_tx_buf_size        = 0x2400,
+    .udp_rx_buf_size        = 0xA500,
+    .sb_efficiency          = 4,
+    .num_bsd_sessions       = 1,
+    .bsd_service_type       = BsdServiceType_Auto,
+};
+
 void __appInit(void)
 {
     Result rc;
@@ -94,7 +110,7 @@ void __appInit(void)
     rc = pminfoInitialize();
     if (R_FAILED(rc))
         fatalThrow(rc);
-    rc = socketInitializeDefault();
+    rc = socketInitialize(&botbaseSocketConfig);
     if (R_FAILED(rc))
         fatalThrow(rc);
     rc = capsscInitialize();
@@ -149,9 +165,14 @@ void makeClickSeq(char* seq)
     mutexUnlock(&clickMutex);
 }
 
+int currentFd = -1;  // socket of the command being handled (file commands send raw data on it)
+
 int argmain(int argc, char** argv)
 {
     if (argc == 0)
+        return 0;
+
+    if (fileCommand(argc, argv, currentFd))
         return 0;
 
 
@@ -581,6 +602,24 @@ int argmain(int argc, char** argv)
         printf("\n");
 
         free(buf);
+    }
+
+    // killGame: terminates the running application (the system then returns to the HOME menu; relaunch with click A there).
+    // Replies "ok" or "err <result>" / "err none" when no application runs.
+    if (!strcmp(argv[0], "killGame")) {
+        u64 pid = 0;
+        Result rc = pmdmntGetApplicationProcessId(&pid);
+        if (R_FAILED(rc) || pid == 0) {
+            printf("err none\n");
+        } else {
+            rc = pmshellInitialize();
+            if (R_SUCCEEDED(rc)) {
+                rc = pmshellTerminateProcess(pid);
+                pmshellExit();
+            }
+            if (R_SUCCEEDED(rc)) printf("ok\n");
+            else printf("err %x\n", rc);
+        }
     }
 
     if (!strcmp(argv[0], "getVersion")) {
@@ -1070,6 +1109,7 @@ int main()
 
                                 fflush(stdout);
                                 dup2(pfds[i].fd, STDOUT_FILENO);
+                                currentFd = pfds[i].fd;
 
                                 parseArgs(linebuf, &argmain);
 
