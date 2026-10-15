@@ -416,6 +416,11 @@ int argmain(int argc, char** argv)
     {
         detachController();
     }
+    //attachController: attach the virtual controller again (initController only; no-op when already attached)
+    if (!strcmp(argv[0], "attachController"))
+    {
+        initController();
+    }
     if (!strcmp(argv[0], "game"))
     {
         if (argc != 2)
