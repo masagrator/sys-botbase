@@ -60,7 +60,6 @@ See https://github.com/olliz0r/sys-botbase/blob/master/sys-botbase/source/util.c
 |clickSeq|Sends several button inputs and wait commands in sequence|1. single string (no spaces) with comma-separated commands out of the following<br><br>**buttonType** for click<br>**+buttonType** for press<br>**-buttonType** for release<br>**Wnumber** to sleep number ms<br>**%X,Y** move left stick to position X Y<br>**&X,Y** move right stick to position X Y| clickSeq A,W1000,B,W200,DUP,W500,DD,W350,%5000,1500,W2650,%0,0
 |clickCancel|Interrupts click sequence|none|clickCancel|
 |detachController|Forces the virtual controller to detach, useful in cases where it bugs out|none|detachController|
-|attachController|Attaches the virtual controller again (after detachController); does nothing when it is already attached|none|attachController|
 
 ### Touchscreen Input
 |Command|Description|Parameters|Usage|
